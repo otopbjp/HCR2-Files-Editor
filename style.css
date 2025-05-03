@@ -5,6 +5,11 @@ body {
     line-height: 1.6;
 }
 
+.language-switcher {
+    position: relative; /* Adjust positioning if needed */
+    z-index: 10; /* Ensure it's clickable over other elements if overlapping */
+}
+
 .container {
     max-width: 960px; /* Limit max width for better readability */
 }
