@@ -3,6 +3,7 @@ let editor = null;
 let originalFileBytes = null;
 let originalFileName = 'savegame_mod.dat';
 let encryptedModifiedBytes = null;
+let currentLang = 'en'; /* Default language */
 const fileInput = document.getElementById('fileInput');
 const fileNameDisplay = document.getElementById('fileNameDisplay');
 const decryptButton = document.getElementById('decryptButton');
@@ -10,6 +11,121 @@ const encryptButton = document.getElementById('encryptButton');
 const downloadButton = document.getElementById('downloadButton');
 const statusMessages = document.getElementById('statusMessages');
 const editorContainer = document.getElementById('editorContainer');
+
+/* Translations Object */
+const translations = {
+    en: {
+        pageTitle: "HCR2 Save File Editor",
+        mainTitle: "HCR2 Save File Editor",
+        subTitle: "For game versions 1.33 and earlier",
+        disclaimerTitle: "Disclaimer:",
+        disclaimerText: "Editing save files can corrupt your game, lead to bans, or cause unexpected issues. <strong>ALWAYS back up your original save file before making modifications.</strong> Use this tool at your own risk.",
+        step1Title: "Upload Save File",
+        step1Label: "Select your save file (.dat)",
+        step1FileStatusDefault: "No file selected.",
+        step1FileStatusSelected: "Selected file: {fileName}",
+        decryptButton: "Decrypt File",
+        step2Title: "Edit Content (JSON)",
+        step2Desc: "Decrypted content will appear here. Edit carefully.",
+        step3Title: "Save Changes",
+        encryptButton: "Encrypt Changes",
+        downloadButton: "Download Modified File",
+        footerBasedOn: "Based on HCR2.Files.Editor.py logic",
+        footerDate: "Current Date: May 3, 2025",
+        /* Status Messages */
+        statusSelectFile: "Please select a file first.",
+        statusDecryptSuccess: "File decrypted successfully and loaded into the editor.",
+        statusDecryptError: "Error decrypting or parsing the file. Is it a valid HCR2 save file (v1.33 or earlier)? Details: {error}",
+        statusFileReadError: "Error reading the file.",
+        statusFileTooShort: "File is too short to be a valid save file.",
+        statusEncryptFileFirst: "Please decrypt a file first.",
+        statusValidationOrEncryptError: "Error: The modified content is not valid JSON or an encryption error occurred. Details: {error}",
+        statusEncryptSuccess: "Changes encrypted successfully. Ready to download.",
+        statusEncryptFirst: "Please encrypt the changes first.",
+        statusDownloadStarted: "Download initiated.",
+        statusDownloadError: "An error occurred while preparing the download. Details: {error}"
+    },
+    fr: {
+        pageTitle: "Éditeur de Sauvegarde HCR2",
+        mainTitle: "Éditeur de Sauvegarde HCR2",
+        subTitle: "Pour versions du jeu 1.33 et antérieures",
+        disclaimerTitle: "Avertissement:",
+        disclaimerText: "Modifier les fichiers de sauvegarde peut corrompre votre jeu, entraîner des bannissements ou causer des problèmes inattendus. <strong>Faites TOUJOURS une copie de sauvegarde de votre fichier original avant toute modification.</strong> Utilisez cet outil à vos propres risques.",
+        step1Title: "Charger le Fichier de Sauvegarde",
+        step1Label: "Sélectionnez votre fichier de sauvegarde (.dat)",
+        step1FileStatusDefault: "Aucun fichier sélectionné.",
+        step1FileStatusSelected: "Fichier sélectionné : {fileName}",
+        decryptButton: "Déchiffrer le Fichier",
+        step2Title: "Éditer le Contenu (JSON)",
+        step2Desc: "Le contenu déchiffré apparaîtra ici. Modifiez prudemment.",
+        step3Title: "Enregistrer les Modifications",
+        encryptButton: "Chiffrer les Modifications",
+        downloadButton: "Télécharger le Fichier Modifié",
+        footerBasedOn: "Basé sur la logique de HCR2.Files.Editor.py",
+        footerDate: "Date Actuelle : 3 mai 2025",
+        /* Status Messages */
+        statusSelectFile: "Veuillez d'abord sélectionner un fichier.",
+        statusDecryptSuccess: "Fichier déchiffré avec succès et chargé dans l'éditeur.",
+        statusDecryptError: "Erreur lors du déchiffrement ou de l'analyse du fichier. Est-ce un fichier de sauvegarde HCR2 valide (v1.33 ou <) ? Détails : {error}",
+        statusFileReadError: "Erreur de lecture du fichier.",
+        statusFileTooShort: "Le fichier est trop court pour être une sauvegarde valide.",
+        statusEncryptFileFirst: "Veuillez d'abord déchiffrer un fichier.",
+        statusValidationOrEncryptError: "Erreur : Le contenu modifié n'est pas du JSON valide ou une erreur de chiffrement s'est produite. Détails : {error}",
+        statusEncryptSuccess: "Modifications chiffrées avec succès. Prêt à télécharger.",
+        statusEncryptFirst: "Veuillez d'abord chiffrer les modifications.",
+        statusDownloadStarted: "Téléchargement initié.",
+        statusDownloadError: "Une erreur s'est produite lors de la préparation du téléchargement. Détails : {error}"
+    }
+};
+
+/* Function to set the language */
+function setLanguage(lang) {
+    if (!translations[lang]) {
+        console.warn(`Language '${lang}' not found. Defaulting to 'en'.`);
+        lang = 'en';
+    }
+    currentLang = lang;
+    localStorage.setItem('preferredLanguage', lang); /* Save preference */
+    document.documentElement.lang = lang; /* Update HTML lang attribute */
+
+    const elements = document.querySelectorAll('[data-translate-key]');
+    elements.forEach(el => {
+        const key = el.dataset.translateKey;
+        const translation = translations[lang][key];
+        if (translation !== undefined) {
+             /* Handle specific attributes like title, placeholder if needed */
+            if (el.tagName === 'TITLE') {
+                el.textContent = translation;
+            } else if (el.hasAttribute('placeholder')) {
+                 el.placeholder = translation;
+            } else {
+                 /* Use innerHTML for keys that might contain HTML (like disclaimerText) */
+                 /* Be cautious with innerHTML if translations aren't trusted */
+                 if (key === 'disclaimerText') {
+                     el.innerHTML = translation;
+                 } else {
+                     el.textContent = translation;
+                 }
+            }
+        } else {
+            console.warn(`Translation key '${key}' not found for language '${lang}'.`);
+        }
+    });
+
+    /* Update dynamic elements like file status if needed */
+    updateFileStatusDisplay();
+}
+
+/* Function to update file status display considering language */
+function updateFileStatusDisplay() {
+    const file = fileInput.files[0];
+    if (file) {
+        fileNameDisplay.textContent = translations[currentLang]['step1FileStatusSelected'].replace('{fileName}', originalFileName);
+    } else {
+        fileNameDisplay.textContent = translations[currentLang]['step1FileStatusDefault'];
+    }
+}
+
 
 /* XOR encryption/decryption key from HCR2.Files.Editor.py */
 const key = [
@@ -32,8 +148,15 @@ const key = [
     0x8F, 0xA3, 0xE9, 0xE9, 0xC4, 0xF4, 0x32
 ];
 
-/* Function to display status messages */
-function showStatus(message, type = 'info') {
+/* Function to display status messages using translation keys */
+function showStatus(translationKey, type = 'info', replacements = {}) {
+    let message = translations[currentLang][translationKey] || `Missing translation for: ${translationKey}`;
+
+    /* Replace placeholders like {error} or {fileName} */
+    for (const placeholder in replacements) {
+        message = message.replace(`{${placeholder}}`, replacements[placeholder]);
+    }
+
     const alertClass = `alert-${type}`;
     const iconClass = {
         'info': 'bi-info-circle-fill',
@@ -50,7 +173,6 @@ function showStatus(message, type = 'info') {
         <div>${message}</div>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
-    /* Clear previous messages before adding a new one for cleaner feedback */
     statusMessages.innerHTML = '';
     statusMessages.appendChild(messageDiv);
 }
@@ -93,7 +215,7 @@ function setupEditor() {
         lineWrapping: true,
         readOnly: true,
         gutters: ["CodeMirror-lint-markers"],
-        lint: true /* Requires addon if you want JSON linting */
+        lint: true
     });
     editor.setSize("100%", "100%");
 }
@@ -101,18 +223,19 @@ function setupEditor() {
 /* Handle file input change */
 fileInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
-    statusMessages.innerHTML = ''; /* Clear status on new file selection */
+    statusMessages.innerHTML = '';
     if (file) {
         originalFileName = file.name;
-        fileNameDisplay.textContent = `Selected file: ${originalFileName}`;
+        updateFileStatusDisplay(); /* Update text using current language */
         decryptButton.disabled = false;
-        setupEditor(); /* Reset editor */
+        setupEditor();
         encryptButton.disabled = true;
         downloadButton.disabled = true;
         originalFileBytes = null;
         encryptedModifiedBytes = null;
     } else {
-        fileNameDisplay.textContent = 'No file selected.';
+        originalFileName = '';
+        updateFileStatusDisplay(); /* Update text using current language */
         decryptButton.disabled = true;
         if (editor) editor.setValue('');
     }
@@ -122,7 +245,7 @@ fileInput.addEventListener('change', (event) => {
 decryptButton.addEventListener('click', () => {
     const file = fileInput.files[0];
     if (!file) {
-        showStatus('Please select a file first.', 'warning');
+        showStatus('statusSelectFile', 'warning');
         return;
     }
 
@@ -131,7 +254,8 @@ decryptButton.addEventListener('click', () => {
         try {
             originalFileBytes = new Uint8Array(e.target.result);
             if (originalFileBytes.length <= 3) {
-                 throw new Error("File is too short to be a valid save file.");
+                 showStatus('statusFileTooShort', 'danger');
+                 return;
             }
             const decryptedBytesWithHeader = xorCrypt(originalFileBytes);
             const jsonDataBytes = decryptedBytesWithHeader.slice(3);
@@ -145,10 +269,10 @@ decryptButton.addEventListener('click', () => {
             encryptButton.disabled = false;
             downloadButton.disabled = true;
             encryptedModifiedBytes = null;
-            showStatus('File decrypted successfully and loaded into the editor.', 'success');
+            showStatus('statusDecryptSuccess', 'success');
         } catch (error) {
             console.error("Decryption or parsing error:", error);
-            showStatus(`Error decrypting or parsing the file. Is it a valid HCR2 save file (v1.33 or earlier)? Details: ${error.message}`, 'danger');
+            showStatus('statusDecryptError', 'danger', { error: error.message });
             editor.setValue('');
             editor.setOption("readOnly", true);
             encryptButton.disabled = true;
@@ -156,7 +280,7 @@ decryptButton.addEventListener('click', () => {
         }
     };
     reader.onerror = () => {
-        showStatus('Error reading the file.', 'danger');
+        showStatus('statusFileReadError', 'danger');
         editor.setValue('');
         editor.setOption("readOnly", true);
         encryptButton.disabled = true;
@@ -168,13 +292,13 @@ decryptButton.addEventListener('click', () => {
 /* Handle Encrypt button click */
 encryptButton.addEventListener('click', () => {
     if (!editor || !originalFileBytes) {
-        showStatus('Please decrypt a file first.', 'warning');
+        showStatus('statusEncryptFileFirst', 'warning');
         return;
     }
 
     try {
         const modifiedJsonString = editor.getValue();
-        JSON.parse(modifiedJsonString); /* Validate JSON before proceeding */
+        JSON.parse(modifiedJsonString);
 
         const modifiedContentBytes = new TextEncoder().encode(modifiedJsonString);
         const originalHeaderBytes = originalFileBytes.slice(0, 3);
@@ -183,11 +307,11 @@ encryptButton.addEventListener('click', () => {
         encryptedModifiedBytes = xorCrypt(dataToEncrypt);
 
         downloadButton.disabled = false;
-        showStatus('Changes encrypted successfully. Ready to download.', 'success');
+        showStatus('statusEncryptSuccess', 'success');
 
     } catch (error) {
         console.error("JSON validation or encryption error:", error);
-        showStatus(`Error: The modified content is not valid JSON or an encryption error occurred. Details: ${error.message}`, 'danger');
+        showStatus('statusValidationOrEncryptError', 'danger', { error: error.message });
         downloadButton.disabled = true;
         encryptedModifiedBytes = null;
     }
@@ -196,7 +320,7 @@ encryptButton.addEventListener('click', () => {
 /* Handle Download button click */
 downloadButton.addEventListener('click', () => {
     if (!encryptedModifiedBytes) {
-        showStatus('Please encrypt the changes first.', 'warning');
+        showStatus('statusEncryptFirst', 'warning');
         return;
     }
 
@@ -212,25 +336,20 @@ downloadButton.addEventListener('click', () => {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        showStatus('Download initiated.', 'info');
-
-        /* Optionally reset state after successful download */
-        /*
-        fileInput.value = '';
-        fileNameDisplay.textContent = 'No file selected.';
-        setupEditor();
-        decryptButton.disabled = true;
-        encryptButton.disabled = true;
-        downloadButton.disabled = true;
-        originalFileBytes = null;
-        encryptedModifiedBytes = null;
-        */
+        showStatus('statusDownloadStarted', 'info');
 
     } catch (error) {
         console.error("Download error:", error);
-        showStatus(`An error occurred while preparing the download. Details: ${error.message}`, 'danger');
+        showStatus('statusDownloadError', 'danger', { error: error.message });
     }
 });
 
-/* Initialize editor on page load */
-document.addEventListener('DOMContentLoaded', setupEditor);
+/* Initialize editor and set initial language on page load */
+document.addEventListener('DOMContentLoaded', () => {
+    setupEditor();
+    const savedLang = localStorage.getItem('preferredLanguage');
+    const browserLang = navigator.language.split('-')[0]; /* Get browser lang (e.g., 'en' from 'en-US') */
+    /* Use saved lang, or browser lang if supported, otherwise default to 'en' */
+    const initialLang = savedLang || (translations[browserLang] ? browserLang : 'en');
+    setLanguage(initialLang);
+});
