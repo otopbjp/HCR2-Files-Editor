@@ -94,19 +94,19 @@ function setLanguage(lang) {
         const translation = translations[lang][key];
         if (translation !== undefined) {
              /* Handle specific attributes like title, placeholder if needed */
-            if (el.tagName === 'TITLE') {
-                el.textContent = translation;
-            } else if (el.hasAttribute('placeholder')) {
-                 el.placeholder = translation;
-            } else {
-                 /* Use innerHTML for keys that might contain HTML (like disclaimerText) */
-                 /* Be cautious with innerHTML if translations aren't trusted */
-                 if (key === 'disclaimerText') {
-                     el.innerHTML = translation;
-                 } else {
-                     el.textContent = translation;
-                 }
-            }
+             if (el.tagName === 'TITLE') {
+                 el.textContent = translation;
+             } else if (el.hasAttribute('placeholder')) {
+                  el.placeholder = translation;
+             } else {
+                  /* Use innerHTML for keys that might contain HTML (like disclaimerText) */
+                  /* Be cautious with innerHTML if translations aren't trusted */
+                  if (key === 'disclaimerText') {
+                      el.innerHTML = translation;
+                  } else {
+                      el.textContent = translation;
+                  }
+             }
         } else {
             console.warn(`Translation key '${key}' not found for language '${lang}'.`);
         }
@@ -140,7 +140,7 @@ const key = [
     0x41, 0x7D, 0x37, 0x1E, 0x2C, 0x35, 0xD4, 0xB6, 0xD1, 0x0A, 0x45, 0x92, 0x5E, 0xE3, 0x70, 0xD9,
     0x98, 0xB1, 0xAE, 0x80, 0xD1, 0x07, 0x5A, 0x84, 0x85, 0x19, 0xDE, 0x75, 0xA8, 0xCE, 0xCE, 0x14,
     0x5E, 0xA6, 0x7E, 0x6A, 0x15, 0xC9, 0x03, 0x1A, 0x0C, 0x0E, 0x9D, 0x92, 0xFA, 0x89, 0x64, 0x55,
-    0xF2, 0x5C, 0xBB, 0x0A, 0x44, 0x2A, 0x78, 0x82, 0xB1, 0xFF, 0xDA, 0x1B, 0x6A, 0x1E, 0x16, 0x5A,
+    0xF2, 0x5C, 0xBB, 0x0A, 0x44, 0x2A, 0x78, 0x82, 0xB1, 0xFF, 0DA, 0x1B, 0x6A, 0x1E, 0x16, 0x5A,
     0x74, 0x77, 0xAC, 0x6B, 0xFA, 0x04, 0x38, 0xD9, 0xF7, 0x04, 0x94, 0x2D, 0xB4, 0x0E, 0x2F, 0x83,
     0xAF, 0xFB, 0xA9, 0xE7, 0x6F, 0x3B, 0x48, 0xEC, 0xB0, 0x71, 0x4C, 0x85, 0x06, 0xA5, 0xF2, 0xF2,
     0xBB, 0x5F, 0x56, 0x98, 0x8F, 0xFC, 0x54, 0x4F, 0xBD, 0xA4, 0x0A, 0x71, 0xAF, 0xE2, 0x8D, 0xBF,
@@ -254,15 +254,15 @@ decryptButton.addEventListener('click', () => {
         try {
             originalFileBytes = new Uint8Array(e.target.result);
             if (originalFileBytes.length <= 3) {
-                 showStatus('statusFileTooShort', 'danger');
-                 return;
+                showStatus('statusFileTooShort', 'danger');
+                return;
             }
             const decryptedBytesWithHeader = xorCrypt(originalFileBytes);
             const jsonDataBytes = decryptedBytesWithHeader.slice(3);
             const jsonString = new TextDecoder('utf-8').decode(jsonDataBytes);
 
-             const parsedJson = JSON.parse(jsonString);
-             const formattedJson = JSON.stringify(parsedJson, null, 2);
+            const parsedJson = JSON.parse(jsonString);
+            const formattedJson = JSON.stringify(parsedJson, null, 2);
 
             editor.setValue(formattedJson);
             editor.setOption("readOnly", false);
@@ -298,7 +298,7 @@ encryptButton.addEventListener('click', () => {
 
     try {
         const modifiedJsonString = editor.getValue();
-        JSON.parse(modifiedJsonString);
+        JSON.parse(modifiedJsonString); // Validate JSON
 
         const modifiedContentBytes = new TextEncoder().encode(modifiedJsonString);
         const originalHeaderBytes = originalFileBytes.slice(0, 3);
@@ -344,7 +344,7 @@ downloadButton.addEventListener('click', () => {
     }
 });
 
-/* Initialize editor and set initial language on page load */
+/* Initialize editor, set initial language, and setup color picker on page load */
 document.addEventListener('DOMContentLoaded', () => {
     setupEditor();
     const savedLang = localStorage.getItem('preferredLanguage');
@@ -352,4 +352,57 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Use saved lang, or browser lang if supported, otherwise default to 'en' */
     const initialLang = savedLang || (translations[browserLang] ? browserLang : 'en');
     setLanguage(initialLang);
+
+    // Code for background color picker
+    const bgColorPicker = document.getElementById('bgColorPicker');
+    const body = document.body;
+
+    // Set initial color picker value to the current body background color
+    // Use getComputedStyle to get the actual applied style, considering CSS rules
+    const initialColor = getComputedStyle(body).backgroundColor;
+    // A simple approach for setting the picker value.
+    // More robust conversion from RGB/named color to hex might be needed
+    // depending on the complexity of your CSS and desired initial state accuracy.
+    bgColorPicker.value = rgbToHex(initialColor) || '#f4f7f6'; // Default to CSS color if conversion fails
+
+    bgColorPicker.addEventListener('input', (event) => {
+        body.style.backgroundColor = event.target.value;
+    });
+
+    // Optional: Save the chosen color to localStorage so it persists across visits
+    bgColorPicker.addEventListener('change', (event) => {
+        localStorage.setItem('chosenBackgroundColor', event.target.value);
+    });
+
+    // Optional: Load the saved color from localStorage when the page loads
+    const savedColor = localStorage.getItem('chosenBackgroundColor');
+    if (savedColor) {
+        body.style.backgroundColor = savedColor;
+        bgColorPicker.value = savedColor;
+    }
 });
+
+// Helper function to convert RGB to Hex (basic implementation)
+// Needed because getComputedStyle might return RGB
+function rgbToHex(rgb) {
+    if (!rgb || rgb.startsWith('#')) {
+        return rgb; // Already hex or invalid
+    }
+
+    // Handle rgba(..., 0) case which can be tricky
+    if (rgb.startsWith('rgba') && rgb.endsWith(', 0)')) {
+        return '#000000'; // Or whatever transparent representation you prefer
+    }
+
+    const rgbMatch = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+    if (!rgbMatch) {
+        return null; // Not a standard rgb format
+    }
+
+    const toHex = (c) => {
+        const hex = parseInt(c).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    };
+
+    return "#" + toHex(rgbMatch[1]) + toHex(rgbMatch[2]) + toHex(rgbMatch[3]);
+}
