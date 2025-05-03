@@ -12,6 +12,8 @@ body {
 
 .container {
     max-width: 960px; /* Limit max width for better readability */
+    /* Supprimez ou commentez la ligne ci-dessous */
+    /* background-color: #ffffff; */
 }
 
 h1.display-5 {
@@ -22,7 +24,7 @@ h1.display-5 {
     border: none; /* Remove default border */
     border-radius: 10px; /* Slightly more rounded corners */
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    background-color: #ffffff;
+    background-color: #ffffff; /* Laissez l'arrière-plan blanc sur les cartes */
 }
 
 .card:hover {
