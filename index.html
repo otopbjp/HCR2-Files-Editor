@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HCR2 Save File Editor</title>
+    <title data-translate-key="pageTitle">HCR2 Save File Editor</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,16 +17,21 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="language-switcher container text-end mt-3 mb-n3">
+        <button class="btn btn-sm btn-outline-secondary me-1" onclick="setLanguage('en')">English</button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="setLanguage('fr')">Français</button>
+    </div>
+
     <div class="container my-5">
         <div class="text-center mb-5">
-            <h1 class="display-5 fw-bold">HCR2 Save File Editor</h1>
-            <p class="lead text-muted">For game versions 1.33 and earlier</p>
+            <h1 class="display-5 fw-bold" data-translate-key="mainTitle">HCR2 Save File Editor</h1>
+            <p class="lead text-muted" data-translate-key="subTitle">For game versions 1.33 and earlier</p>
         </div>
 
         <div class="alert alert-warning d-flex align-items-center shadow-sm" role="alert">
              <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
             <div>
-                <strong>Disclaimer:</strong> Editing save files can corrupt your game, lead to bans, or cause unexpected issues. <strong>ALWAYS back up your original save file before making modifications.</strong> Use this tool at your own risk.
+                <strong data-translate-key="disclaimerTitle">Disclaimer:</strong> <span data-translate-key="disclaimerText">Editing save files can corrupt your game, lead to bans, or cause unexpected issues. <strong>ALWAYS back up your original save file before making modifications.</strong> Use this tool at your own risk.</span>
             </div>
         </div>
 
@@ -35,14 +39,14 @@
             <div class="col-lg-12">
                 <div class="card shadow-sm step-card">
                     <div class="card-body">
-                        <h5 class="card-title fw-semibold"><span class="step-number">1</span> Upload Save File</h5>
+                        <h5 class="card-title fw-semibold"><span class="step-number">1</span> <span data-translate-key="step1Title">Upload Save File</span></h5>
                         <div class="mb-3">
-                            <label for="fileInput" class="form-label">Select your save file (.dat)</label>
+                            <label for="fileInput" class="form-label" data-translate-key="step1Label">Select your save file (.dat)</label>
                             <input class="form-control" type="file" id="fileInput" accept=".dat" aria-describedby="fileNameDisplay">
-                            <div id="fileNameDisplay" class="form-text mt-2">No file selected.</div>
+                            <div id="fileNameDisplay" class="form-text mt-2" data-translate-key="step1FileStatusDefault">No file selected.</div>
                         </div>
                          <button id="decryptButton" class="btn btn-primary btn-gradient" disabled>
-                             <i class="bi bi-unlock-fill me-1"></i> Decrypt File
+                             <i class="bi bi-unlock-fill me-1"></i> <span data-translate-key="decryptButton">Decrypt File</span>
                          </button>
                     </div>
                 </div>
@@ -51,8 +55,8 @@
             <div class="col-lg-12">
                 <div class="card shadow-sm step-card">
                     <div class="card-body">
-                        <h5 class="card-title fw-semibold"><span class="step-number">2</span> Edit Content (JSON)</h5>
-                        <p class="card-text text-muted">Decrypted content will appear here. Edit carefully.</p>
+                        <h5 class="card-title fw-semibold"><span class="step-number">2</span> <span data-translate-key="step2Title">Edit Content (JSON)</span></h5>
+                        <p class="card-text text-muted" data-translate-key="step2Desc">Decrypted content will appear here. Edit carefully.</p>
                         <div id="editorContainer" class="editor-wrapper"></div>
                     </div>
                 </div>
@@ -61,12 +65,12 @@
             <div class="col-lg-12">
                 <div class="card shadow-sm step-card">
                     <div class="card-body">
-                        <h5 class="card-title fw-semibold"><span class="step-number">3</span> Save Changes</h5>
+                        <h5 class="card-title fw-semibold"><span class="step-number">3</span> <span data-translate-key="step3Title">Save Changes</span></h5>
                          <button id="encryptButton" class="btn btn-success btn-gradient me-2" disabled>
-                             <i class="bi bi-lock-fill me-1"></i> Encrypt Changes
+                             <i class="bi bi-lock-fill me-1"></i> <span data-translate-key="encryptButton">Encrypt Changes</span>
                          </button>
                          <button id="downloadButton" class="btn btn-secondary" disabled>
-                             <i class="bi bi-download me-1"></i> Download Modified File
+                             <i class="bi bi-download me-1"></i> <span data-translate-key="downloadButton">Download Modified File</span>
                          </button>
                     </div>
                 </div>
@@ -77,7 +81,8 @@
         </div>
 
         <footer class="text-center mt-5 pt-4 border-top">
-            <small class="text-muted">Based on HCR2.Files.Editor.py logic | Current Date: May 3, 2025</small>
+            <small class="text-muted" data-translate-key="footerBasedOn">Based on HCR2.Files.Editor.py logic</small> |
+            <small class="text-muted" data-translate-key="footerDate">Current Date: May 3, 2025</small>
         </footer>
     </div>
 
