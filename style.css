@@ -1,0 +1,142 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7f6; /* Default background */
+    color: #333;
+    line-height: 1.6;
+}
+
+.language-switcher {
+    position: relative; /* Adjust positioning if needed */
+    z-index: 10; /* Ensure it's clickable over other elements if overlapping */
+}
+
+.container {
+    max-width: 960px; /* Limit max width for better readability */
+    /* Set background to transparent to show body background */
+    background-color: transparent;
+}
+
+h1.display-5 {
+    color: #2c3e50; /* Dark blue-grey for title */
+}
+
+.card {
+    border: none; /* Remove default border */
+    border-radius: 10px; /* Slightly more rounded corners */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    background-color: #ffffff; /* Keep white background on cards */
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-title {
+    color: #34495e; /* Slightly lighter dark blue-grey */
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.step-number {
+    display: inline-block;
+    background-color: #3498db; /* Primary blue */
+    color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-right: 10px;
+}
+
+.btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 400;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0px);
+}
+
+/* Subtle gradient for primary/success buttons */
+.btn-gradient {
+    background-image: linear-gradient(to right, #3498db 0%, #2980b9 100%);
+    border: none;
+    color: white;
+}
+.btn-gradient.btn-success {
+     background-image: linear-gradient(to right, #2ecc71 0%, #27ae60 100%);
+}
+
+.btn-gradient:hover {
+    background-image: linear-gradient(to right, #2980b9 0%, #3498db 100%);
+    color: white;
+}
+.btn-gradient.btn-success:hover {
+     background-image: linear-gradient(to right, #27ae60 0%, #2ecc71 100%);
+     color: white;
+}
+
+
+.form-control, .form-select {
+    border-radius: 6px;
+    border: 1px solid #dce4ec;
+    padding: 0.6rem 1rem;
+}
+
+.form-control:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.editor-wrapper {
+    height: 450px;
+    border: 1px solid #dce4ec;
+    border-radius: 8px;
+    overflow: hidden; /* Clip CodeMirror corners */
+}
+
+#editorContainer .CodeMirror {
+  height: 100%; /* Fill the wrapper */
+  border: none; /* Remove CodeMirror's own border */
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+    padding: 1rem 1.5rem;
+}
+.alert-warning {
+    background-color: #fff3cd;
+    color: #664d03;
+}
+.alert-success {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+.alert-danger {
+     background-color: #f8d7da;
+     color: #842029;
+}
+.alert-info {
+     background-color: #cff4fc;
+     color: #055160;
+}
+
+#statusMessages .alert {
+    margin-bottom: 1rem;
+}
+
+footer {
+    color: #7f8c8d; /* Grey text for footer */
+}
