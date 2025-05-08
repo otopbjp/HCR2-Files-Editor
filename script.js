@@ -34,16 +34,12 @@ const key = [
 ];
 
 /* XOR operation function (modified to handle header size) */
-// dataBytes: The byte array to XOR (should be the data *after* the header)
-// headerSize: The size of the header that was *removed* before passing to this function
 function xorCrypt(dataBytes, headerSize) {
     const dataLength = dataBytes.length;
     const keyLength = key.length;
     const outputBytes = new Uint8Array(dataLength);
 
     for (let i = 0; i < dataLength; i++) {
-        // The key index depends on the original position in the file
-        // which is i (current index in dataBytes) + headerSize (size of skipped header)
         const keyIndex = (i + headerSize) % keyLength;
         outputBytes[i] = dataBytes[i] ^ key[keyIndex];
     }
@@ -60,61 +56,59 @@ function concatUint8Arrays(arr1, arr2) {
 
 /* Setup CodeMirror editor instance */
 function setupEditor() {
-    // Check if CodeMirror is available before trying to use it
     if (window.CodeMirror) {
         if (editor) {
-            editor.toTextArea(); // Clean up previous instance
+            editor.toTextArea(); 
         }
-        editorContainer.innerHTML = ''; // Clear container
-        editor = CodeMirror(editorContainer, {
-            mode: { name: "javascript", json: true },
-            theme: "material-darker",
-            lineNumbers: true,
-            lineWrapping: true,
-            readOnly: true,
-            gutters: ["CodeMirror-lint-markers"],
-            lint: true
-        });
-        editor.setSize("100%", "100%");
-        console.log("CodeMirror editor setup complete."); // Log success to console
+        editorContainer.innerHTML = ''; 
+        try {
+            editor = CodeMirror(editorContainer, {
+                mode: { name: "javascript", json: true },
+                theme: "material-darker",
+                lineNumbers: true,
+                lineWrapping: true,
+                readOnly: true,
+                gutters: ["CodeMirror-lint-markers"],
+                lint: true
+            });
+            editor.setSize("100%", "100%");
+            console.log("CodeMirror editor setup complete.");
+            return true; // Indicate success
+        } catch (e) {
+            console.error("Error initializing CodeMirror:", e);
+            editorContainer.innerHTML = '<div class="alert alert-danger" role="alert"><i class="bi bi-x-octagon-fill me-2"></i>Error: Code editor initialization failed. Linting addons might be missing or failing. Check console.</div>';
+            editor = null; // Ensure editor is null on failure
+            return false; // Indicate failure
+        }
     } else {
         console.error("CodeMirror library is not loaded. Cannot setup editor.");
-        // Show a clear message to the user if the editor fails to load
-        editorContainer.innerHTML = '<div class="alert alert-danger" role="alert"><i class="bi bi-x-octagon-fill me-2"></i>Error: The code editor could not be loaded. Please check your internet connection.</div>';
+        editorContainer.innerHTML = '<div class="alert alert-danger" role="alert"><i class="bi bi-x-octagon-fill me-2"></i>Error: The code editor could not be loaded. Please check your internet connection or script inclusions.</div>';
+        editor = null; // Ensure editor is null if CodeMirror itself is not available
+        return false; // Indicate failure
     }
 }
 
 /* Determine header size based on file bytes (only checks for FNX) */
 function determineHeaderSize(fileBytes) {
     if (!fileBytes || fileBytes.length < 4) {
-        return 0; // Cannot be a valid FNX file if too short
+        return 0; 
     }
-
-    // Check for "FNX" header bytes (ASCII values)
-    if (fileBytes[0] === 0x46 && // 'F'
-        fileBytes[1] === 0x4E && // 'N'
-        fileBytes[2] === 0x58)   // 'X'
-    {
-        return 4; // "FNX" + 1 byte header
+    if (fileBytes[0] === 0x46 && fileBytes[1] === 0x4E && fileBytes[2] === 0x58) { // "FNX"
+        return 4; 
     } else {
-        return 0; // Not an FNX file (unsupported type for this tool)
+        return 0; 
     }
 }
 
 /* Simple function to display status messages */
 function showStatus(message, type = 'info') {
     const alertClass = {
-        'info': 'alert-info',
-        'success': 'alert-success',
-        'warning': 'alert-warning',
-        'danger': 'alert-danger'
+        'info': 'alert-info', 'success': 'alert-success',
+        'warning': 'alert-warning', 'danger': 'alert-danger'
     }[type];
-
     const iconClass = {
-        'info': 'bi-info-circle-fill',
-        'success': 'bi-check-circle-fill',
-        'warning': 'bi-exclamation-triangle-fill',
-        'danger': 'bi-x-octagon-fill'
+        'info': 'bi-info-circle-fill', 'success': 'bi-check-circle-fill',
+        'warning': 'bi-exclamation-triangle-fill', 'danger': 'bi-x-octagon-fill'
     }[type];
 
     const messageDiv = document.createElement('div');
@@ -125,56 +119,50 @@ function showStatus(message, type = 'info') {
         <div>${message}</div>
         <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
-    statusMessages.innerHTML = ''; // Clear previous messages
+    statusMessages.innerHTML = ''; 
     statusMessages.appendChild(messageDiv);
-    console.log(`Status [${type.toUpperCase()}]: ${message}`); // Also log to console
+    console.log(`Status [${type.toUpperCase()}]: ${message}`);
 }
-
 
 /* Handle file input change */
 fileInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
-    statusMessages.innerHTML = ''; // Clear previous status messages
+    statusMessages.innerHTML = ''; 
     if (file) {
-        try { // Add a try...catch block around the file processing logic
+        try {
             originalFileName = file.name;
-            fileNameDisplay.textContent = `Selected file: ${originalFileName}`; // Update file name display
+            fileNameDisplay.textContent = `Selected file: ${originalFileName}`;
 
-            // Ensure editor is set up before enabling decryption
             if (window.CodeMirror) {
-                setupEditor(); // Try to set up the editor
-                if (editor) { // Check if setupEditor was successful
-                    decryptButton.disabled = false; // Enable decrypt button only if editor is ready
-                    editor.setValue(''); // Clear previous editor content
-                    editor.setOption("readOnly", true); // Set editor to read-only initially
+                if (setupEditor()) { // setupEditor now returns true on success, false on failure
+                    decryptButton.disabled = false; 
+                    if (editor) { // Check if editor was successfully created
+                        editor.setValue(''); 
+                        editor.setOption("readOnly", true); 
+                    }
                 } else {
-                    // setupEditor failed but didn't throw, handle gracefully
-                    showStatus("Error: Code editor initialization failed.", 'danger');
+                    // Error message handled within setupEditor or by a general message
+                    showStatus("Error: Code editor could not be initialized. Please check console.", 'danger');
                     decryptButton.disabled = true;
                 }
             } else {
                 showStatus("Error: The code editor library is not available. Cannot process file.", 'danger');
-                decryptButton.disabled = true; // Keep decrypt disabled if editor not available
-                // Clear editor area or show message if CodeMirror is missing (handled in setupEditor)
+                decryptButton.disabled = true; 
             }
 
-            encryptButton.disabled = true; // Disable encrypt until decrypted
-            downloadButton.disabled = true; // Disable download until encrypted
-            originalFileBytes = null; // Clear previous file data
-            encryptedModifiedBytes = null; // Clear previous encrypted data
-
-            console.log(`File selected: ${originalFileName}`); // Log file selection
-
+            encryptButton.disabled = true; 
+            downloadButton.disabled = true; 
+            originalFileBytes = null; 
+            encryptedModifiedBytes = null; 
+            console.log(`File selected: ${originalFileName}`);
         } catch (error) {
-            // Catch any unexpected errors during file selection processing
             console.error("Error during file selection processing:", error);
             showStatus(`An error occurred while processing the file selection: ${error.message}`, 'danger');
-            // Reset UI elements to initial state on error
             fileNameDisplay.textContent = 'No file selected.';
             decryptButton.disabled = true;
             encryptButton.disabled = true;
             downloadButton.disabled = true;
-            if (editor) { // Clear editor if it was created
+            if (editor) { 
                 editor.setValue('');
                 editor.setOption("readOnly", true);
             }
@@ -182,13 +170,12 @@ fileInput.addEventListener('change', (event) => {
             encryptedModifiedBytes = null;
         }
     } else {
-        // Reset UI if no file is selected (e.g., user cancels the file picker)
         originalFileName = '';
         fileNameDisplay.textContent = 'No file selected.';
         decryptButton.disabled = true;
-        if (editor) { // Clear editor if it exists
+        if (editor) { 
             editor.setValue('');
-            editor.setOption("readOnly", true); // Set editor back to read-only
+            editor.setOption("readOnly", true); 
         }
         encryptButton.disabled = true;
         downloadButton.disabled = true;
@@ -200,133 +187,93 @@ fileInput.addEventListener('change', (event) => {
 
 /* Handle Decrypt button click */
 decryptButton.addEventListener('click', () => {
-    // Check if a file is selected in the input and the editor is ready
-    if (!fileInput.files[0] || !editor || !window.CodeMirror) { // MODIFIED LINE
-        showStatus('Please select a file first and ensure the editor is ready.', 'warning');
+    if (!fileInput.files[0]) {
+        showStatus('Please select a file first.', 'warning');
+        return;
+    }
+    if (!editor || !window.CodeMirror) { // Also check if editor instance exists
+        showStatus('Editor is not ready. Please ensure CodeMirror is loaded and initialized.', 'warning');
         return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
-            originalFileBytes = new Uint8Array(e.target.result); // Use bytes from the loaded file
-
+            originalFileBytes = new Uint8Array(e.target.result); 
             const headerSize = determineHeaderSize(originalFileBytes);
 
             if (headerSize === 0) {
                 showStatus('Error: Only FNX JSON files are supported by this editor.', 'danger');
-                originalFileBytes = null; // Clear bytes on error
-                if (editor) {
-                    editor.setValue('');
-                    editor.setOption("readOnly", true);
-                }
-                encryptButton.disabled = true;
-                downloadButton.disabled = true;
+                originalFileBytes = null; 
+                if (editor) { editor.setValue(''); editor.setOption("readOnly", true); }
+                encryptButton.disabled = true; downloadButton.disabled = true;
                 return;
             }
-
             if (originalFileBytes.length < headerSize) {
                 showStatus('Error: File is too short to be a valid FNX JSON file.', 'danger');
-                originalFileBytes = null; // Clear bytes on error
-                if (editor) {
-                    editor.setValue('');
-                    editor.setOption("readOnly", true);
-                }
-                encryptButton.disabled = true;
-                downloadButton.disabled = true;
+                originalFileBytes = null;
+                if (editor) { editor.setValue(''); editor.setOption("readOnly", true); }
+                encryptButton.disabled = true; downloadButton.disabled = true;
                 return;
             }
 
-            // Extract header and encrypted data bytes
-            // const headerBytes = originalFileBytes.slice(0, headerSize); // Not strictly needed for decryption process itself if header isn't modified or re-used directly here
             const encryptedDataBytes = originalFileBytes.slice(headerSize);
-
-            // Decrypt only the data bytes, providing the headerSize to xorCrypt
             const decryptedDataBytes = xorCrypt(encryptedDataBytes, headerSize);
-
-            // Decode the decrypted data bytes as JSON string
             const jsonString = new TextDecoder('utf-8').decode(decryptedDataBytes);
-
-            // Attempt to parse JSON to validate and format
             const parsedJson = JSON.parse(jsonString);
             const formattedJson = JSON.stringify(parsedJson, null, 2);
 
             if (editor) {
-                editor.setValue(formattedJson); // Load JSON into editor
-                editor.setOption("readOnly", false); // Make editor editable
+                editor.setValue(formattedJson); 
+                editor.setOption("readOnly", false); 
             }
-            encryptButton.disabled = false; // Enable encrypt button
-            downloadButton.disabled = true; // Disable download until encrypted
-            encryptedModifiedBytes = null; // Reset encrypted bytes on new decryption
+            encryptButton.disabled = false; 
+            downloadButton.disabled = true; 
+            encryptedModifiedBytes = null; 
             showStatus('File decrypted successfully and loaded into the editor.', 'success');
-
         } catch (error) {
             console.error("Decryption or parsing error:", error);
             showStatus(`Error decrypting or parsing the file: ${error.message}. Please ensure it's a valid FNX JSON file.`, 'danger');
-            if (editor) {
-                editor.setValue('');
-                editor.setOption("readOnly", true);
-            }
-            encryptButton.disabled = true;
-            downloadButton.disabled = true;
-            originalFileBytes = null; // Clear bytes on error
+            if (editor) { editor.setValue(''); editor.setOption("readOnly", true); }
+            encryptButton.disabled = true; downloadButton.disabled = true;
+            originalFileBytes = null; 
         }
     };
-    // Read the selected file's content
     const fileToRead = fileInput.files[0];
     if (fileToRead) {
         reader.readAsArrayBuffer(fileToRead);
     } else {
-        // This case should theoretically not happen if decryptButton is enabled and the first check passed,
-        // but for safety:
         showStatus('No file selected to decrypt.', 'warning');
     }
 });
 
 /* Handle Encrypt button click */
 encryptButton.addEventListener('click', () => {
-    // Check if editor is ready, original file bytes are available, and editor is not read-only
     if (!editor || !originalFileBytes || editor.getOption("readOnly")) {
         showStatus('Please decrypt and edit a file first.', 'warning');
         return;
     }
-
     try {
         const modifiedJsonString = editor.getValue();
         JSON.parse(modifiedJsonString); // Validate JSON
 
-        // Determine headerSize from original file bytes (should be 4 for supported files)
         const headerSize = determineHeaderSize(originalFileBytes);
-
         if (headerSize === 0) {
-            // This case should ideally not happen if decrypt was successful, but included for safety
             showStatus('Error: Could not determine file type for encryption. Please re-select the original file.', 'danger');
-            downloadButton.disabled = true;
-            encryptedModifiedBytes = null;
+            downloadButton.disabled = true; encryptedModifiedBytes = null;
             return;
         }
-
-        // Encode the modified JSON string to bytes
         const modifiedContentBytes = new TextEncoder().encode(modifiedJsonString);
-
-        // Get the original header bytes
         const originalHeaderBytes = originalFileBytes.slice(0, headerSize);
-        // const dataToEncrypt = modifiedContentBytes; // We will XOR just the data part (Variable name kept for clarity if needed later)
-
-        // Encrypt the modified content bytes, using headerSize for key index offset
         const encryptedDataBytes = xorCrypt(modifiedContentBytes, headerSize);
-
-        // Prepend the original header bytes to the encrypted data bytes
         encryptedModifiedBytes = concatUint8Arrays(originalHeaderBytes, encryptedDataBytes);
 
-        downloadButton.disabled = false; // Enable download button
+        downloadButton.disabled = false; 
         showStatus('Changes encrypted successfully. Ready to download.', 'success');
-
     } catch (error) {
         console.error("JSON validation or encryption error:", error);
         showStatus(`Error during JSON validation or encryption: ${error.message}. Please check your JSON format.`, 'danger');
-        downloadButton.disabled = true;
-        encryptedModifiedBytes = null;
+        downloadButton.disabled = true; encryptedModifiedBytes = null;
     }
 });
 
@@ -336,23 +283,19 @@ downloadButton.addEventListener('click', () => {
         showStatus('Please encrypt the changes first.', 'warning');
         return;
     }
-
     try {
-        // Create a Blob from the encrypted bytes
         const blob = new Blob([encryptedModifiedBytes], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob); // Create a download URL
-        const a = document.createElement('a'); // Create a link element
-        a.style.display = 'none'; // Hide the link
-        a.href = url; // Set the download URL
-        // Use the original file name but append _mod and change extension to .json
-        const baseName = originalFileName.replace(/\.[^/.]+$/, ""); // Get file name without extension
-        a.download = `${baseName}_mod.json`; // Set download file name
-        document.body.appendChild(a); // Append link to body
-        a.click(); // Simulate click to trigger download
-        window.URL.revokeObjectURL(url); // Clean up the URL object
-        document.body.removeChild(a); // Remove the link
+        const url = URL.createObjectURL(blob); 
+        const a = document.createElement('a'); 
+        a.style.display = 'none'; 
+        a.href = url; 
+        const baseName = originalFileName.replace(/\.[^/.]+$/, ""); 
+        a.download = `${baseName}_mod.json`; 
+        document.body.appendChild(a); 
+        a.click(); 
+        window.URL.revokeObjectURL(url); 
+        document.body.removeChild(a); 
         showStatus('Download initiated.', 'info');
-
     } catch (error) {
         console.error("Download error:", error);
         showStatus(`An error occurred while preparing the download: ${error.message}`, 'danger');
@@ -361,47 +304,31 @@ downloadButton.addEventListener('click', () => {
 
 /* Initialize editor and setup color picker on page load */
 document.addEventListener('DOMContentLoaded', () => {
-    try { // Catch potential errors during DOMContentLoaded execution
-
-        // --- Editor Setup ---
-        // Check if CodeMirror is available before setting up the editor initially
+    try {
         if (window.CodeMirror) {
-            setupEditor(); // Setup the editor on page load
-            // Initial state of buttons depends on editor availability
-            decryptButton.disabled = true;
-            encryptButton.disabled = true;
-            downloadButton.disabled = true;
+            setupEditor(); 
         } else {
             console.error("CodeMirror library not loaded on DOMContentLoaded. Editor will not be available.");
-            showStatus("Error: The code editor could not be loaded. Please check your internet connection.", 'danger');
-            // Ensure buttons that depend on the editor are disabled
-            decryptButton.disabled = true;
-            encryptButton.disabled = true;
-            downloadButton.disabled = true;
-            // Display message in editor area (handled in setupEditor now)
+            showStatus("Error: The code editor could not be loaded. Please check your internet connection or script inclusions.", 'danger');
         }
+        // Initial state of buttons 
+        decryptButton.disabled = true; // Will be enabled by fileInput change if editor is ready
+        encryptButton.disabled = true;
+        downloadButton.disabled = true;
 
-        // --- Color Picker Setup ---
         const bgColorPicker = document.getElementById('bgColorPicker');
         const body = document.body;
 
-        if (bgColorPicker) { // Check if the color picker element exists
-            // Set initial color picker value to the current body background color
+        if (bgColorPicker) { 
             const initialColor = getComputedStyle(body).backgroundColor;
-            bgColorPicker.value = rgbToHex(initialColor) || '#f4f7f6'; // Default to CSS color if conversion fails
+            bgColorPicker.value = rgbToHex(initialColor) || '#f4f7f6'; 
 
-            // Event listener for the color picker (live update)
             bgColorPicker.addEventListener('input', (event) => {
                 body.style.backgroundColor = event.target.value;
             });
-
-            // Optional: Save the chosen color to localStorage so it persists across visits
-            // This is typically triggered on the 'change' event (when picker is closed)
             bgColorPicker.addEventListener('change', (event) => {
                 localStorage.setItem('chosenBackgroundColor', event.target.value);
             });
-
-            // Optional: Load the saved color from localStorage when the page loads
             const savedColor = localStorage.getItem('chosenBackgroundColor');
             if (savedColor) {
                 body.style.backgroundColor = savedColor;
@@ -411,68 +338,37 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             console.warn("bgColorPicker element not found. Color picker functionality will be disabled.");
         }
-
     } catch (error) {
         console.error("Error during DOMContentLoaded execution:", error);
         showStatus(`An internal error occurred during application setup: ${error.message}`, 'danger');
-        // Ensure all main buttons are disabled if setup fails
         decryptButton.disabled = true;
         encryptButton.disabled = true;
         downloadButton.disabled = true;
-        // Clear editor area or show message (handled in setupEditor if it was called)
     }
 });
 
-// Helper function to convert RGB to Hex (basic implementation)
-// Needed because getComputedStyle might return RGB
 function rgbToHex(rgb) {
-    // Check if it's already in hex format or invalid
-    if (!rgb || rgb.startsWith('#')) {
-        return rgb;
-    }
+    if (!rgb || rgb.startsWith('#')) return rgb;
+    if (rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return 'transparent';
 
-    // Handle explicit transparent color string
-    if (rgb === 'transparent') {
-        return 'transparent'; // Or a default like '#00000000' or your app's default bg if transparent isn't suitable for the picker
-    }
-
-    // Handle rgba(0, 0, 0, 0) case specifically if needed, though 'transparent' might cover it
-    if (rgb === 'rgba(0, 0, 0, 0)') {
-        return 'transparent'; // Or '#00000000'
-    }
-
-    // Match standard rgb(r, g, b) format
     const rgbMatch = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
     if (rgbMatch) {
-        const toHex = (c) => {
-            const hex = parseInt(c).toString(16);
-            return hex.length === 1 ? '0' + hex : hex;
-        };
+        const toHex = (c) => parseInt(c).toString(16).padStart(2, '0');
         return "#" + toHex(rgbMatch[1]) + toHex(rgbMatch[2]) + toHex(rgbMatch[3]);
     }
-
-    // Try matching rgba(r, g, b, a) format and convert if alpha is 1 (fully opaque)
     const rgbaMatch = rgb.match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)$/);
     if (rgbaMatch) {
         const alpha = parseFloat(rgbaMatch[4]);
-        const toHex = (c) => {
-            const hex = parseInt(c).toString(16);
-            return hex.length === 1 ? '0' + hex : hex;
-        };
-        if (alpha === 1) { // If fully opaque, return hex without alpha
+        const toHex = (c) => parseInt(c).toString(16).padStart(2, '0');
+        if (alpha === 1) {
             return "#" + toHex(rgbaMatch[1]) + toHex(rgbaMatch[2]) + toHex(rgbaMatch[3]);
         } else {
-            // For RGBA with alpha < 1, the color picker might not support it directly or might need hex8 format
-            // For simplicity, if you want to return something for the color picker, you might return the RGB part
-            // or handle it as 'transparent' or a default if the alpha makes it significantly different.
-            // For now, let's return the rgb part if it was a valid rgba string.
-            // Or, if your color picker supports hex8, you could convert to that.
-            // This function currently prioritizes hex6 for opaque colors.
-             console.warn(`rgbToHex: Alpha value ${alpha} found in ${rgb}. Color picker might not represent this accurately without alpha support. Returning RGB portion as hex.`);
-             return "#" + toHex(rgbaMatch[1]) + toHex(rgbaMatch[2]) + toHex(rgbaMatch[3]); // Fallback for picker
+            // For non-opaque rgba, the color picker might not represent it well without alpha.
+            // Returning hex of RGB part or specific handling.
+            console.warn(`rgbToHex: Alpha value ${alpha} found in ${rgb}.`);
+            return "#" + toHex(rgbaMatch[1]) + toHex(rgbaMatch[2]) + toHex(rgbaMatch[3]); 
         }
     }
-    
     console.warn(`rgbToHex: Could not parse RGB string: ${rgb}. Returning original.`);
-    return rgb; // Return original if parsing fails
+    return rgb; 
 }
